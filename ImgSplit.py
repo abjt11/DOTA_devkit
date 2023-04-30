@@ -2,11 +2,13 @@ import os
 import codecs
 import numpy as np
 import math
+import argparse
 from dota_utils import GetFileFromThisRootDir
 import cv2
 import shapely.geometry as shgeo
 import dota_utils as util
 import copy
+from sklearn.model_selection import train_test_split
 
 def choose_best_pointorder_fit_another(poly1, poly2):
     """
@@ -30,6 +32,13 @@ def choose_best_pointorder_fit_another(poly1, poly2):
 def cal_line_length(point1, point2):
     return math.sqrt( math.pow(point1[0] - point2[0], 2) + math.pow(point1[1] - point2[1], 2))
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='BBARegressive implementation')
+    parser.add_argument('--src_path', type=str, default='imgs/', help='Src data directory')
+    parser.add_argument('--dst_path', type=str, default='splitted_imgs/', help='Dst data directory')
+    parser.add_argument('--phase', type=str, default='train', help='Phase directory')
+    args = parser.parse_args()
+    return args
 
 class splitbase():
     def __init__(self,
@@ -190,6 +199,7 @@ class splitbase():
         :param extent: the image format
         :return:
         """
+        all_labels = []
         img = cv2.imread(os.path.join(self.imagepath, name + extent))
         if np.shape(img) == ():
             return
@@ -218,6 +228,7 @@ class splitbase():
                 right = min(left + self.subsize, weight - 1)
                 down = min(up + self.subsize, height - 1)
                 subimgname = outbasename + str(left) + '___' + str(up)
+                all_labels.append(subimgname)
                 # self.f_sub.write(name + ' ' + subimgname + ' ' + str(left) + ' ' + str(up) + '\n')
                 self.savepatches(resizeimg, objects, subimgname, left, up, right, down)
                 if (up + self.subsize >= height):
@@ -229,17 +240,35 @@ class splitbase():
             else:
                 left = left + self.slide
 
+        return all_labels
+
     def splitdata(self, rate):
         """
         :param rate: resize rate before cut
         """
         imagelist = GetFileFromThisRootDir(self.imagepath)
         imagenames = [util.custombasename(x) for x in imagelist if (util.custombasename(x) != 'Thumbs')]
+        # print(imagenames)
+        all_labels = []
         for name in imagenames:
-            self.SplitSingle(name, rate, self.ext)
+            labels = self.SplitSingle(name, rate, self.ext)
+            all_labels.extend(labels)
+        return all_labels
+
+    def savesplitdata(self, data, fname):
+        with open(os.path.join(self.outpath, fname), 'w') as file:
+            for row in data:
+                file.write(row+'\n')
 
 if __name__ == '__main__':
     # example usage of ImgSplit
-    split = splitbase(r'example',
-                       r'examplesplit')
-    split.splitdata(1)
+    args = parse_args()
+    split = splitbase(args.src_path, args.dst_path)
+    if args.phase=='test':
+        test_list = split.splitdata(0.5)
+        split.savesplitdata(test_list, 'test.txt')
+    else:
+      test_list = []
+      trainval_list = split.splitdata(0.5)
+      split.savesplitdata(trainval_list, 'trainval.txt')
+      split.savesplitdata(test_list, 'test.txt')
