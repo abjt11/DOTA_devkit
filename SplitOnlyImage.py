@@ -1,8 +1,19 @@
 import os
+import argparse
 import numpy as np
 import cv2
 import copy
 import dota_utils as util
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='BBARegressive implementation')
+    parser.add_argument('--src_path', type=str, default='imgs/', help='Src data directory')
+    parser.add_argument('--dst_path', type=str, default='splitted_imgs/', help='Dst data directory')
+    parser.add_argument('--phase', type=str, default='train', help='Phase directory')
+    args = parser.parse_args()
+    return args
+
 
 class splitbase():
     def __init__(self,
@@ -27,7 +38,7 @@ class splitbase():
     def SplitSingle(self, name, rate, extent):
         img = cv2.imread(os.path.join(self.srcpath, name + extent))
         assert np.shape(img) != ()
-
+        all_labels = []
         if (rate != 1):
             resizeimg = cv2.resize(img, None, fx=rate, fy=rate, interpolation = cv2.INTER_CUBIC)
         else:
@@ -47,6 +58,7 @@ class splitbase():
                     up = max(height - self.subsize, 0)
                 subimgname = outbasename + str(left) + '___' + str(up)
                 self.saveimagepatches(resizeimg, subimgname, left, up)
+                all_labels.append(subimgname)
                 if (up + self.subsize >= height):
                     break
                 else:
@@ -55,14 +67,26 @@ class splitbase():
                 break
             else:
                 left = left + self.slide
+        return all_labels
 
     def splitdata(self, rate):
         
         imagelist = util.GetFileFromThisRootDir(self.srcpath)
         imagenames = [util.custombasename(x) for x in imagelist if (util.custombasename(x) != 'Thumbs')]
+        imagenames = [name for name in imagenames if name.startswith('P')]
+        all_labels = []
         for name in imagenames:
-            self.SplitSingle(name, rate, self.ext)
+            labels = self.SplitSingle(name, rate, self.ext)
+            all_labels.extend(labels)
+        return all_labels
+
+    def savesplitdata(self, data, fname):
+        with open(os.path.join(self.outpath, fname), 'w') as file:
+            for row in data:
+                file.write(row+'\n')
+
 if __name__ == '__main__':
-    split = splitbase(r'example/images',
-                      r'example/imagesSplit')
-    split.splitdata(1)
+    args = parse_args()
+    split = splitbase(args.src_path, args.dst_path)
+    test_list = split.splitdata(1)
+    split.savesplitdata(test_list, 'test.txt')
