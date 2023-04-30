@@ -11,10 +11,10 @@ import time
 import sys
 sys.path.insert(0,'..')
 try:
-    import dota_utils as util
+    import datasets.DOTA_devkit.dota_utils as util
 except:
-    import dota_kit.dota_utils as util
-import polyiou
+    import datasets.DOTA_devkit.dota_kit.dota_utils as util
+import datasets.DOTA_devkit.polyiou as polyiou
 import pdb
 import math
 from multiprocessing import Pool
