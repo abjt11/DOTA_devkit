@@ -248,7 +248,7 @@ class splitbase():
         """
         imagelist = GetFileFromThisRootDir(self.imagepath)
         imagenames = [util.custombasename(x) for x in imagelist if (util.custombasename(x) != 'Thumbs')]
-        # print(imagenames)
+        imagenames = [name for name in imagenames if name.startswith('P')]
         all_labels = []
         for name in imagenames:
             labels = self.SplitSingle(name, rate, self.ext)
@@ -264,11 +264,7 @@ if __name__ == '__main__':
     # example usage of ImgSplit
     args = parse_args()
     split = splitbase(args.src_path, args.dst_path)
-    if args.phase=='test':
-        test_list = split.splitdata(0.5)
-        split.savesplitdata(test_list, 'test.txt')
-    else:
-      test_list = []
-      trainval_list = split.splitdata(0.5)
-      split.savesplitdata(trainval_list, 'trainval.txt')
-      split.savesplitdata(test_list, 'test.txt')
+    test_list = []
+    trainval_list = split.splitdata(0.5)
+    split.savesplitdata(trainval_list, 'trainval.txt')
+    split.savesplitdata(test_list, 'test.txt')
