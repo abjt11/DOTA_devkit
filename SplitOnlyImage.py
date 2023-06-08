@@ -30,6 +30,8 @@ class splitbase():
         self.srcpath = srcpath
         self.dstpath = dstpath
         self.ext = ext
+        if not os.path.exists(self.outpath):
+            os.makedirs(self.outpath)
     def saveimagepatches(self, img, subimgname, left, up, ext='.png'):
         subimg = copy.deepcopy(img[up: (up + self.subsize), left: (left + self.subsize)])
         outdir = os.path.join(self.dstpath, subimgname + ext)
